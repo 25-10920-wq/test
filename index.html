@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VitalGuard - 생체징후 기반 조기경고(NEWS) & 응급분류(KTAS) 시뮬레이터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- 상단 네비게이션 헤더 -->
+    <header class="bg-gradient-to-r from-teal-700 via-teal-800 to-cyan-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-teal-500/30 border border-teal-300 flex items-center justify-center text-teal-200 text-xl shadow-inner">
+                    <i class="fa-solid fa-heart-pulse animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight flex items-center gap-2">
+                        VitalGuard <span class="text-xs bg-teal-500/40 text-teal-200 px-2 py-0.5 rounded-full border border-teal-400/30">Edu v1.0</span>
+                    </h1>
+                    <p class="text-xs text-teal-200/80">생체징후 조기경고점수(NEWS) & 간이 응급분류(KTAS) 보건의료 융합 시뮬레이터</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs">
+                <span class="bg-emerald-600/40 text-emerald-200 px-3 py-1.5 rounded-lg border border-emerald-500/30 font-medium">
+                    <i class="fa-solid fa-graduation-cap mr-1"></i> 고교 2학년 보건·간호·정보 융합 프로젝트
+                </span>
+                <button id="printBtn" class="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg border border-white/20 transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> 결과지 인쇄
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨테이너 -->
+    <main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+
+        <!-- 프로젝트 소개 및 생기부 탐구 배경 카드 (접기/펼치기 가능) -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-teal-50 rounded-full pointer-events-none -z-0"></div>
+            <div class="relative z-10">
+                <div class="flex justify-between items-center mb-2 cursor-pointer" id="introToggle">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-book-medical text-teal-600"></i>
+                        <span>탐구 배경: 생체징후(Vital Sign)의 임상적 수치화와 환자 안전 관리</span>
+                    </h2>
+                    <span class="text-xs text-teal-600 font-semibold hover:underline flex items-center gap-1">
+                        <span id="introToggleText">설명 접기</span> <i id="introToggleIcon" class="fa-solid fa-chevron-up"></i>
+                    </span>
+                </div>
+                <div id="introContent" class="text-sm text-slate-600 leading-relaxed space-y-2 mt-2 pt-2 border-t border-slate-100">
+                    <p>
+                        <strong>임상적 의의:</strong> 입원 환자의 급격한 악화(심정지, 패혈증 쇼크 등)는 발생 6~8시간 전부터 호흡수, 맥박수, 혈압, 산소포화도 등의 <em>생체징후(Vital Signs) 이상</em>으로 선행 신호가 나타납니다.
+                        영국 국민보건서비스(NHS)에서 개발한 <strong>NEWS (National Early Warning Score)</strong>와 대한민국 응급의료 체계의 <strong>KTAS (한국형 응급환자 분류도구)</strong>의 의학적 알고리즘을 고교 정보·수학(조건 분기 및 가중치 산출) 개념과 융합하여 구현했습니다.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+                        <div class="bg-teal-50/70 p-2.5 rounded-lg border border-teal-100">
+                            <span class="font-bold text-teal-800"><i class="fa-solid fa-virus-covid mr-1"></i> NEWS 알고리즘</span>
+                            <p class="text-teal-700 mt-0.5">호흡·산소포화도·체온·혈압·맥박·의식 점수 합산 (0~20점), 중증 위험군 조기 발굴</p>
+                        </div>
+                        <div class="bg-sky-50/70 p-2.5 rounded-lg border border-sky-100">
+                            <span class="font-bold text-sky-800"><i class="fa-solid fa-truck-medical mr-1"></i> KTAS 응급도 판정</span>
+                            <p class="text-sky-700 mt-0.5">1단계(소생)부터 5단계(비응급)까지 신속 분류 및 진료 대기 한계시간 제시</p>
+                        </div>
+                        <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-100">
+                            <span class="font-bold text-amber-800"><i class="fa-solid fa-user-nurse mr-1"></i> 임상 간호 중재</span>
+                            <p class="text-amber-700 mt-0.5">바이탈 측정 주기 결정, 의사 보고(SBAR) 요건, 필수 간호 조치 자동 권고</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 빠른 시연용 가상 환자 시나리오 버튼들 -->
+        <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-4 text-white shadow-md">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="bg-teal-500/30 text-teal-300 p-2 rounded-lg text-sm"><i class="fa-solid fa-clipboard-user"></i></span>
+                    <div>
+                        <h3 class="text-sm font-bold">임상 시나리오 원클릭 시연 (Preset Cases)</h3>
+                        <p class="text-xs text-slate-300">학교 발표나 생기부 시연 시 클릭 한 번으로 대표적인 임상 환자 데이터를 채워 넣습니다.</p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" class="preset-btn bg-slate-700 hover:bg-teal-600 text-xs px-3 py-2 rounded-lg font-medium transition-colors" data-case="normal">
+                        <i class="fa-solid fa-check text-emerald-400 mr-1"></i> 정상 성인
+                    </button>
+                    <button type="button" class="preset-btn bg-slate-700 hover:bg-amber-600 text-xs px-3 py-2 rounded-lg font-medium transition-colors" data-case="asthma">
+                        <i class="fa-solid fa-lungs text-amber-400 mr-1"></i> 천식 급성 악화
+                    </button>
+                    <button type="button" class="preset-btn bg-slate-700 hover:bg-rose-600 text-xs px-3 py-2 rounded-lg font-medium transition-colors" data-case="sepsis">
+                        <i class="fa-solid fa-biohazard text-rose-400 mr-1"></i> 패혈증 의심
+                    </button>
+                    <button type="button" class="preset-btn bg-slate-700 hover:bg-red-700 text-xs px-3 py-2 rounded-lg font-medium transition-colors" data-case="shock">
+                        <i class="fa-solid fa-triangle-exclamation text-red-400 mr-1"></i> 저혈량 쇼크
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 인터랙티브 작업 공간: 좌측(입력폼) / 우측(분석 및 평가 대시보드) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- 좌측: 환자 정보 및 생체징후 입력 폼 (5 cols) -->
+            <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-5">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-notes-medical text-teal-600"></i> 환자 사정 및 바이탈 입력
+                    </h3>
+                    <button type="button" id="resetFormBtn" class="text-xs text-slate-400 hover:text-rose-500 font-medium">
+                        <i class="fa-solid fa-rotate-left mr-1"></i>초기화
+                    </button>
+                </div>
+
+                <form id="vitalForm" class="space-y-4">
+                    <!-- 기본 인적사항 -->
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">환자명/식별ID</label>
+                            <input type="text" id="patientName" value="환자_01" required
+                                   class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">나이 (만)</label>
+                            <input type="number" id="patientAge" value="48" min="1" max="120" required
+                                   class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">성별</label>
+                            <select id="patientGender" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                                <option value="남성">남성 (M)</option>
+                                <option value="여성">여성 (F)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 주증상 (Chief Complaint) -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">주증상 (Chief Complaint)</label>
+                        <select id="chiefComplaint" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white">
+                            <option value="fever">고열 및 전신 쇠약감 (Fever / Weakness)</option>
+                            <option value="dyspnea">호흡 곤란 및 쌕쌕거림 (Dyspnea / Stridor)</option>
+                            <option value="chest_pain">흉통 및 가슴 답답함 (Chest Pain)</option>
+                            <option value="bleeding">외상 및 출혈 (Trauma / Bleeding)</option>
+                            <option value="abdominal_pain">급성 복통 (Acute Abdominal Pain)</option>
+                            <option value="dizziness">어지럼증 및 실신 (Dizziness / Syncope)</option>
+                            <option value="checkup" selected>일반 정기 검진 (Routine Checkup)</option>
+                        </select>
+                    </div>
+
+                    <!-- 생체징후 1: 호흡수 (RR) -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-lungs text-cyan-600"></i> 호흡수 (Respiration Rate)
+                            </label>
+                            <span class="text-xs text-slate-400">정상: 12~20회/분</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="respRateRange" min="6" max="45" value="16" class="w-full accent-teal-600">
+                            <div class="flex items-center min-w-[75px]">
+                                <input type="number" id="respRate" min="4" max="60" value="16" required
+                                       class="w-14 text-center font-bold text-sm py-1 border border-slate-300 rounded-md focus:ring-teal-500">
+                                <span class="text-xs text-slate-500 ml-1">회</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 생체징후 2: 산소포화도 (SpO2) 및 산소 투여 여부 -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-droplet text-blue-600"></i> 산소포화도 (SpO2)
+                            </label>
+                            <span class="text-xs text-slate-400">정상: ≥ 96%</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="spo2Range" min="70" max="100" value="98" class="w-full accent-teal-600">
+                            <div class="flex items-center min-w-[75px]">
+                                <input type="number" id="spo2" min="50" max="100" value="98" required
+                                       class="w-14 text-center font-bold text-sm py-1 border border-slate-300 rounded-md focus:ring-teal-500">
+                                <span class="text-xs text-slate-500 ml-1">%</span>
+                            </div>
+                        </div>
+                        <!-- 산소 투여 여부 -->
+                        <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs text-slate-600">
+                            <span>보충 산소 투여 여부 (Supplemental O2)</span>
+                            <div class="flex gap-3">
+                                <label class="flex items-center gap-1 cursor-pointer">
+                                    <input type="radio" name="suppO2" value="no" checked class="accent-teal-600"> 대기 (Room Air)
+                                </label>
+                                <label class="flex items-center gap-1 cursor-pointer">
+                                    <input type="radio" name="suppO2" value="yes" class="accent-teal-600"> 산소 공급 중
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 생체징후 3: 수축기/이완기 혈압 (BP) -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-gauge-high text-rose-500"></i> 혈압 (Blood Pressure)
+                            </label>
+                            <span class="text-xs text-slate-400">정상: 111~140 mmHg</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mt-1.5">
+                            <div>
+                                <label class="text-[11px] text-slate-500">수축기 (Systolic)</label>
+                                <div class="flex items-center mt-0.5">
+                                    <input type="number" id="sysBP" min="50" max="260" value="120" required
+                                           class="w-full text-center font-bold text-sm py-1.5 border border-slate-300 rounded-md focus:ring-teal-500">
+                                    <span class="text-xs text-slate-400 ml-1">mmHg</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-500">이완기 (Diastolic)</label>
+                                <div class="flex items-center mt-0.5">
+                                    <input type="number" id="diaBP" min="30" max="160" value="80" required
+                                           class="w-full text-center font-bold text-sm py-1.5 border border-slate-300 rounded-md focus:ring-teal-500">
+                                    <span class="text-xs text-slate-400 ml-1">mmHg</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 생체징후 4: 맥박수 (HR) 및 체온 (BT) -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                            <label class="text-xs font-bold text-slate-700 block mb-1">
+                                <i class="fa-solid fa-heart text-red-500"></i> 맥박수 (Heart Rate)
+                            </label>
+                            <div class="flex items-center">
+                                <input type="number" id="heartRate" min="20" max="220" value="76" required
+                                       class="w-full text-center font-bold text-sm py-1.5 border border-slate-300 rounded-md focus:ring-teal-500">
+                                <span class="text-xs text-slate-500 ml-1.5">bpm</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-1">정상: 51~90 bpm</span>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                            <label class="text-xs font-bold text-slate-700 block mb-1">
+                                <i class="fa-solid fa-temperature-half text-amber-500"></i> 체온 (Body Temp)
+                            </label>
+                            <div class="flex items-center">
+                                <input type="number" id="temp" min="32.0" max="43.0" step="0.1" value="36.5" required
+                                       class="w-full text-center font-bold text-sm py-1.5 border border-slate-300 rounded-md focus:ring-teal-500">
+                                <span class="text-xs text-slate-500 ml-1.5">°C</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 block mt-1">정상: 36.1~38.0°C</span>
+                        </div>
+                    </div>
+
+                    <!-- 의식 수준 (ACVPU 척도) -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                        <label class="text-xs font-bold text-slate-700 block mb-1">
+                            <i class="fa-solid fa-brain text-purple-600"></i> 의식 수준 (Consciousness: ACVPU)
+                        </label>
+                        <select id="consciousness" class="w-full text-xs font-medium px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white">
+                            <option value="A" selected>A (Alert) - 명료 (정상 의식)</option>
+                            <option value="C">C (New Confusion) - 새로운 혼돈/섬망 증세</option>
+                            <option value="V">V (Voice) - 언어 자극에만 반응</option>
+                            <option value="P">P (Pain) - 통증 자극에만 반응</option>
+                            <option value="U">U (Unresponsive) - 무반응 (혼수)</option>
+                        </select>
+                    </div>
+
+                    <!-- 평가 및 저장 버튼 -->
+                    <div class="flex gap-2 pt-2">
+                        <button type="submit" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-chart-line"></i> 바이탈 실시간 평가 실행
+                        </button>
+                        <button type="button" id="saveHistoryBtn" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-floppy-disk"></i> 저장
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 우측: 결과 대시보드 및 간호 중재 계획 (7 cols) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- 1. NEWS 점수 및 KTAS 응급도 종합 배너 -->
+                <div id="resultBanner" class="rounded-2xl p-6 text-white shadow-lg bg-gradient-to-r from-emerald-600 to-teal-700 transition-all duration-300">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span id="riskBadge" class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-md border border-white/30 uppercase tracking-wide">
+                                    저위험 (Low Risk)
+                                </span>
+                                <span id="ktasLevelBadge" class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-md border border-white/30">
+                                    KTAS 5단계: 비응급
+                                </span>
+                            </div>
+                            <h2 id="patientSummaryTitle" class="text-2xl font-black mt-2">환자_01 - 안정 상태</h2>
+                            <p id="riskSummaryDesc" class="text-xs text-white/90 mt-1">임상적 악화 위험이 극히 낮습니다. 통상적인 병동 루틴 관찰이 요구됩니다.</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 text-center min-w-[120px]">
+                            <span class="text-xs uppercase font-medium text-white/80 block">NEWS Total Score</span>
+                            <div class="text-4xl font-extrabold tracking-tight mt-0.5" id="newsScoreDisplay">0</div>
+                            <span class="text-[10px] text-white/70">총점 (만점 20점)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 세부 지표별 NEWS 점수 분석 그리드 & 레이더 차트 -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                    <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-chart-pie text-teal-600 mr-1.5"></i> 6대 생체징후 세부 가중치(점수) 분석</span>
+                        <span class="text-[11px] font-normal text-slate-500">점수가 높을수록(최대 3점) 정상범위에서 심각하게 벗어남</span>
+                    </h4>
+
+                    <!-- 점수 뱃지 그리드 -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs mb-4">
+                        <div class="p-2.5 rounded-xl border border-slate-200 flex justify-between items-center" id="scoreBadgeRR">
+                            <span class="text-slate-600">호흡수 (RR)</span>
+                            <span class="font-bold px-2 py-0.5 rounded text-white bg-emerald-500" id="subScoreRR">0점</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl border border-slate-200 flex justify-between items-center" id="scoreBadgeSpO2">
+                            <span class="text-slate-600">산소포화도</span>
+                            <span class="font-bold px-2 py-0.5 rounded text-white bg-emerald-500" id="subScoreSpO2">0점</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl border border-slate-200 flex justify-between items-center" id="scoreBadgeO2">
+                            <span class="text-slate-600">산소 투여</span>
+                            <span class="font-bold px-2 py-0.5 rounded text-white bg-emerald-500" id="subScoreO2">0점</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl border border-slate-200 flex justify-between items-center" id="scoreBadgeBP">
+                            <span class="text-slate-600">수축기 혈압</span>
+                            <span class="font-bold px-2 py-0.5 rounded text-white bg-emerald-500" id="subScoreBP">0점</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl border border-slate-200 flex justify-between items-center" id="scoreBadgeHR">
+                            <span class="text-slate-600">심박수 (HR)</span>
+                            <span class="font-bold px-2 py-0.5 rounded text-white bg-emerald-500" id="subScoreHR">0점</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl border border-slate-200 flex justify-between items-center" id="scoreBadgeTemp">
+                            <span class="text-slate-600">체온 (Temp)</span>
+                            <span class="font-bold px-2 py-0.5 rounded text-white bg-emerald-500" id="subScoreTemp">0점</span>
+                        </div>
+                    </div>
+
+                    <!-- 레이더 차트 영역 -->
+                    <div class="w-full h-52 flex justify-center items-center">
+                        <canvas id="vitalRadarChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 3. 임상 간호 중재(Nursing Intervention) 및 행동 프로토콜 -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-stethoscope text-teal-600"></i> 임상 간호 프로토콜 및 권장 중재 (Nursing Protocol)
+                    </h4>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                            <div class="text-slate-500 font-semibold mb-1 flex items-center gap-1">
+                                <i class="fa-regular fa-clock text-teal-600"></i> 바이탈 재측정 모니터링 주기
+                            </div>
+                            <div class="text-sm font-bold text-slate-800" id="monitoringFreqText">최소 12시간마다 1회</div>
+                            <p class="text-slate-500 text-[11px] mt-0.5" id="monitoringFreqDesc">안정 상태이므로 일상적 정규 바이탈 측정 수행</p>
+                        </div>
+
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                            <div class="text-slate-500 font-semibold mb-1 flex items-center gap-1">
+                                <i class="fa-solid fa-user-doctor text-indigo-600"></i> 의료진 보고 (SBAR Communication)
+                            </div>
+                            <div class="text-sm font-bold text-slate-800" id="physicianActionText">일반 보고 (루틴 회진)</div>
+                            <p class="text-slate-500 text-[11px] mt-0.5" id="physicianActionDesc">특이 변화 발생 시 즉시 담당의 notify</p>
+                        </div>
+                    </div>
+
+                    <!-- 구체적 간호 조치 리스트 -->
+                    <div class="bg-teal-50/50 p-3.5 rounded-xl border border-teal-100">
+                        <div class="text-xs font-bold text-teal-900 mb-2 flex items-center gap-1.5">
+                            <i class="fa-solid fa-list-check text-teal-600"></i> 우선순위 간호 중재 사항
+                        </div>
+                        <ul id="nursingActionList" class="text-xs text-teal-800 space-y-1.5 list-disc list-inside">
+                            <li>환자의 기저 질환 및 평소 활력징후 추세 비교 확인</li>
+                            <li>수분 섭취 상태 및 배뇨량(I/O Check) 기본 점검</li>
+                            <li>낙상 위험도 기본 사정 및 침상 난간(Side-rail) 거치 확인</li>
+                        </ul>
+                    </div>
+
+                    <!-- KTAS 응급분류 상세 안내 -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-slate-600 flex items-start gap-2.5">
+                        <i class="fa-solid fa-circle-info text-sky-500 text-base mt-0.5"></i>
+                        <div>
+                            <strong class="text-slate-700">KTAS 연계 고찰:</strong>
+                            <span id="ktasDetailText">
+                                KTAS 5단계 환자는 생체징후가 안정적인 비응급 상태로 권장 진료 대기시간은 최대 120분 이내입니다.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 하단: 환자 저장 기록 리스트 (LocalStorage 기반) -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-teal-600"></i> 사정 기록 이력 (Patient Assessment History)
+                </h3>
+                <button id="clearHistoryBtn" class="text-xs text-slate-400 hover:text-rose-500 transition-colors">
+                    <i class="fa-solid fa-trash-can mr-1"></i>기록 전체 삭제
+                </button>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="bg-slate-100 text-slate-600 uppercase font-semibold">
+                        <tr>
+                            <th class="px-3 py-2.5 rounded-l-lg">측정 시각</th>
+                            <th class="px-3 py-2.5">환자명</th>
+                            <th class="px-3 py-2.5">주증상</th>
+                            <th class="px-3 py-2.5">바이탈 요약 (BP/HR/RR/BT/SpO2)</th>
+                            <th class="px-3 py-2.5">NEWS 점수</th>
+                            <th class="px-3 py-2.5">KTAS 분류</th>
+                            <th class="px-3 py-2.5 rounded-r-lg text-center">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-slate-100 text-slate-700">
+                        <tr>
+                            <td colspan="7" class="text-center py-6 text-slate-400">저장된 환자 사정 기록이 없습니다.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 인쇄 전용 헤더/푸터 및 스타일 제어용 스크립트 로드 -->
+    <script src="script.js"></script>
+</body>
+</html>
+

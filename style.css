@@ -1,0 +1,69 @@
+/* VitalGuard Style CSS */
+@import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    background-color: #f8fafc;
+}
+
+/* Range Input 커스텀 */
+input[type="range"] {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 9999px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #0d9488;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.1s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+/* 숫자 입력 필드 스핀 버튼 제거 (깔끔한 UI) */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    opacity: 0.5;
+}
+
+/* 배너 전환 애니메이션 */
+#resultBanner {
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+/* 인쇄(Print) 전용 레이아웃 */
+@media print {
+    header, #introToggle, #vitalForm button, .preset-btn, #saveHistoryBtn, #clearHistoryBtn, #printBtn, #introContent {
+        display: none !important;
+    }
+
+    body {
+        background-color: white !important;
+        color: black !important;
+        font-size: 11pt;
+    }
+
+    .shadow-sm, .shadow-md, .shadow-lg {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+
+    #resultBanner {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+        border: 2px solid #0f172a !important;
+    }
+
+    #resultBanner * {
+        color: #0f172a !important;
+    }
+}
+
